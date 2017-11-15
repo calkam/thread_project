@@ -20,13 +20,13 @@ pthread_mutex_t mutex     = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  non_full  = PTHREAD_COND_INITIALIZER;
 pthread_cond_t  non_empty = PTHREAD_COND_INITIALIZER;
 
-command_t buffer[BUFFER_SIZE];
+command_t* buffer[BUFFER_SIZE];
 
 int nb_element = 0;
 int in=0;
 int out=0;
 
-pthread_t tids[2*MAX_CLIENT];
+pthread_t tids[MAX_CLIENT];
 int nb_thread=0;
 
 static void display_help(char *exec)
@@ -189,8 +189,10 @@ static int answer_command(command_t *cmd)
 
 //------------------------- THREAD --------------------------------------------
 
-void push_buffer(command_t cmd){
+void push_buffer(command_t *cmd){
     //TODO give priority to the first messages
+
+    command_t *cmd_clone = clone_command(cmd);
 
     pthread_mutex_lock(&mutex);
 
@@ -198,21 +200,20 @@ void push_buffer(command_t cmd){
         pthread_cond_wait(&non_full, &mutex);
     }
 
-    buffer[in] = cmd;
+    buffer[in] = cmd_clone;
     in = (in + 1) % BUFFER_SIZE;
     nb_element++;
 
     pthread_cond_broadcast(&non_empty);
-
 
     pthread_mutex_unlock(&mutex);
 
     return;
 }
 
-command_t pop_buffer(void){
+command_t* pop_buffer(void){
 
-    command_t cmd;
+    command_t *cmd;
 
     pthread_mutex_lock(&mutex);
 
@@ -292,15 +293,14 @@ void* thread_communication(void* arg){
             fprintf(stderr, "Warning: unable to parse message from client %s\n", client_name);
             notify_parse_error(cmd, recv_buff);
         }else{
-            push_buffer(*cmd);
+            push_buffer(cmd);
         }
         free(recv_buff);
-        //free(cmd);
+        free(cmd);
     }
 
     if(client_name[0] != 0){
         cmd = new_command(client_key);
-        printf("coucou\n");
         cmd->cid= UNREGISTER;
 
         if(unregisted_client(cmd)){
@@ -309,29 +309,21 @@ void* thread_communication(void* arg){
         free(cmd);
     }
 
-    if(pthread_create(&tids[nb_thread], NULL, thread_executor, &client_key) != 0){
-        fprintf(stderr,"Failed to create thread number %d\n", nb_thread);
-    }else{
-        nb_thread++;
-    }
-
     return NULL;
 }
 
 void* thread_executor(void* arg){
 
-    unsigned long client_key = *((int *)arg);
-
-    command_t cmd;
+    command_t *cmd;
 
     while(1){
         cmd = pop_buffer();
-        if(process_command(&cmd) == -1){
+        if(process_command(cmd) == -1){
             //TODO : client_key
-            fprintf(stderr, "Warning: unable to process command from client %lu\n", client_key);
+            //fprintf(stderr, "Warning: unable to process command from client %lu\n", client_key);
         }
-        if(answer_command(&cmd) == -1){
-            fprintf(stderr, "Warning: unable to answer command from client %lu\n", client_key);
+        if(answer_command(cmd) == -1){
+            //fprintf(stderr, "Warning: unable to answer command from client %lu\n", client_key);
         }
     }
 
@@ -384,6 +376,12 @@ int main(int argc, char *argv[])
 
         if(pthread_create(&tids[nb_thread], NULL, thread_communication, &newsockfd) != 0){
             fprintf(stderr,"Failed to create thread number %d\n",nb_thread);
+        }else{
+            nb_thread++;
+        }
+
+        if(pthread_create(&tids[nb_thread], NULL, thread_executor, NULL) != 0){
+            fprintf(stderr,"Failed to create thread number %d\n", nb_thread);
         }else{
             nb_thread++;
         }

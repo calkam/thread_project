@@ -38,7 +38,7 @@ static void free_client_data(client_bundle_t *client)
      * a client disconnects. The reason is that pointers to this data
      * structure are stored if several places in the code, and so,
      * freeing properly would be a complex operation */
-    
+
     /*publication_t *item= client->pub_list, *previous;
 
     while(item!=NULL){
@@ -56,7 +56,7 @@ void generate_cmd_error(command_t *cmd)
     /* lookup client */
     client_bundle_t *client = registration_lookup(cmd->key);
 
-    
+
 
     if(client == NULL){
         fprintf(stderr, "Error -- no client found\n");
@@ -140,7 +140,7 @@ int server_connection_init(int port)
         close(sockfd);
         return -1;
     }
-    
+
     if(listen(sockfd, BABBLE_BACKLOG)){
         perror("ERROR on listen");
         close(sockfd);
@@ -159,13 +159,13 @@ int server_connection_accept(int sock)
     socklen_t clilen = sizeof(cli_addr);
 
     new_sock = accept(sock, (struct sockaddr *) &cli_addr, &clilen);
-    
+
     if (new_sock < 0){
         perror("ERROR on accept");
         close(sock);
         return -1;
     }
-    
+
     return new_sock;
 }
 
@@ -182,18 +182,35 @@ command_t* new_command(unsigned long key)
     return cmd;
 }
 
+command_t* clone_command(command_t *cmd){
 
+    command_t *cmd_clone = malloc(sizeof(command_t));
+    cmd_clone->cid = cmd->cid;
+    cmd_clone->sock = cmd->sock;
+    strcpy(cmd_clone->msg, cmd->msg);
+    cmd_clone->key = cmd->key;
+    cmd_clone->answer = cmd->answer;
+    cmd_clone->answer_expected = cmd->answer_expected;
+
+    return cmd_clone;
+}
+
+void display_command_terminal(command_t *cmd){
+
+    printf("%s\n", cmd->msg);
+
+}
 
 int run_login_command(command_t *cmd)
 {
     struct timespec tt;
     clock_gettime(CLOCK_REALTIME, &tt);
-    
+
     /* compute hash of the new client id */
     cmd->key = hash(cmd->msg);
-    
+
     client_bundle_t *client_data=malloc(sizeof(client_bundle_t));
-    
+
     strncpy(client_data->client_name, cmd->msg, BABBLE_ID_SIZE);
     client_data->sock = cmd->sock;
     client_data->key=cmd->key;
@@ -210,31 +227,31 @@ int run_login_command(command_t *cmd)
         generate_cmd_error(cmd);
         return -1;
     }
-    
+
     printf("### New client %s (key = %lu)\n", client_data->client_name, client_data->key);
 
     /* answer to client */
     cmd->answer.size = -1;
     cmd->answer.aset = malloc(sizeof(answer_t));
-    
+
     snprintf(cmd->answer.aset->msg, BABBLE_BUFFER_SIZE,"%s[%ld]: registered with key %lu\n", client_data->client_name, tt.tv_sec - server_start, client_data->key);
-    
+
     return 0;
 }
 
 
 int run_publish_command(command_t *cmd)
-{    
+{
     client_bundle_t *client = registration_lookup(cmd->key);
-    
+
     if(client == NULL){
         fprintf(stderr, "Error -- no client found\n");
         generate_cmd_error(cmd);
         return -1;
     }
-    
+
     publication_t *pub = publication_set_insert(client->pub_set, cmd->msg);
-    
+
     printf("### Client %s published { %s } at date %ld\n", client->client_name, pub->msg, pub->date);
 
     /* answer to client */
@@ -242,7 +259,7 @@ int run_publish_command(command_t *cmd)
     cmd->answer.aset = malloc(sizeof(answer_t));
 
     snprintf(cmd->answer.aset->msg, BABBLE_BUFFER_SIZE,"%s[%ld]: { %s }\n", client->client_name, pub->date, pub->msg);
-    
+
     return 0;
 }
 
@@ -250,7 +267,7 @@ int run_publish_command(command_t *cmd)
 int run_follow_command(command_t *cmd)
 {
     client_bundle_t *client = registration_lookup(cmd->key);
-    
+
     if(client == NULL){
         fprintf(stderr, "Error -- no client found\n");
         generate_cmd_error(cmd);
@@ -262,12 +279,12 @@ int run_follow_command(command_t *cmd)
 
     /* lookup client to follow */
     client_bundle_t *f_client = registration_lookup(f_key);
-    
+
     if(f_client == NULL){
-        generate_cmd_error(cmd);        
+        generate_cmd_error(cmd);
         return 0;
     }
-    
+
     /* if client is not already followed, add it*/
     int i=0;
 
@@ -276,14 +293,14 @@ int run_follow_command(command_t *cmd)
             break;
         }
     }
-    
+
     if(i == client->nb_followed){
         client->followed[i]=f_client;
         client->nb_followed++;
         f_client->nb_followers++;
     }
 
-    
+
     /* answer to client */
     cmd->answer.size = -1;
     cmd->answer.aset = malloc(sizeof(answer_t));
@@ -299,7 +316,7 @@ int run_timeline_command(command_t *cmd)
     int i=0;
     timeline_item_t *pub_list=NULL;
     int item_count=0;
-    
+
     /* get current time to know up to when we publish*/
     struct timespec tt;
     clock_gettime(CLOCK_REALTIME, &tt);
@@ -317,7 +334,7 @@ int run_timeline_command(command_t *cmd)
 
     /* start from where we finished last time*/
     uint64_t start_time=client->last_timeline;
-    
+
     /* gather publications over all followed clients */
     for(i=0; i < client->nb_followed; i++){
         client_bundle_t *f_client=client->followed[i];
@@ -331,7 +348,7 @@ int run_timeline_command(command_t *cmd)
             if(pub->ndate > end_time){
                 break;
             }
-            
+
             timeline_item_t *item=malloc(sizeof(timeline_item_t));
             item->pub=pub;
             item->client= f_client;
@@ -359,10 +376,10 @@ int run_timeline_command(command_t *cmd)
 
     /* now that we have a full timeline, we generate the messages to
      * the client */
-    
+
     /* save number of items to transmit */
     cmd->answer.size = item_count;
-    
+
     /* generate each item*/
     answer_t *current_answer=NULL;
     timeline_item_t *time_iter=pub_list;
@@ -377,14 +394,14 @@ int run_timeline_command(command_t *cmd)
             current_answer = current_answer->next;
             current_answer->next=NULL;
         }
-                
+
         snprintf(current_answer->msg, BABBLE_BUFFER_SIZE,"    %s[%ld]: %s\n", time_iter->client->client_name, time_iter->pub->date, time_iter->pub->msg);
-    
+
         time_iter = time_iter->next;
     }
 
     client->last_timeline = end_time;
-    
+
     return 0;
 }
 
@@ -399,13 +416,13 @@ int run_fcount_command(command_t *cmd)
         generate_cmd_error(cmd);
         return -1;
     }
-    
+
     /* answer to client */
     cmd->answer.size = -1;
     cmd->answer.aset = malloc(sizeof(answer_t));
-    
+
     snprintf(cmd->answer.aset->msg, BABBLE_BUFFER_SIZE,"%s[%ld]: has %d followers\n", client->client_name, time(NULL) - server_start, client->nb_followers);
-    
+
     return 0;
 }
 
@@ -413,19 +430,19 @@ int run_rdv_command(command_t *cmd)
 {
     /* lookup client */
     client_bundle_t *client = registration_lookup(cmd->key);
-    
+
     if(client == NULL){
         fprintf(stderr, "Error -- no client found\n");
         generate_cmd_error(cmd);
         return -1;
     }
-    
+
     /* answer to client */
     cmd->answer.size = -1;
     cmd->answer.aset = malloc(sizeof(answer_t));
-    
+
     snprintf(cmd->answer.aset->msg, BABBLE_BUFFER_SIZE,"%s[%ld]: rdv_ack\n", client->client_name, time(NULL) - server_start);
-    
+
     return 0;
 }
 
@@ -433,18 +450,18 @@ int run_rdv_command(command_t *cmd)
 int unregisted_client(command_t *cmd)
 {
     assert(cmd->cid == UNREGISTER);
-    
+
     /* remove client */
     client_bundle_t *client = registration_remove(cmd->key);
 
     if(client != NULL){
         printf("### Unregister client %s (key = %lu)\n", client->client_name, client->key);
         close(client->sock);
-     
-        
+
+
         free_client_data(client);
     }
-    
+
 
     return 0;
 }
@@ -464,15 +481,15 @@ int notify_parse_error(command_t *cmd, char *input)
 
     if(cmd->answer_expected){
         char buffer[BABBLE_BUFFER_SIZE];
-        
+
         snprintf(buffer, BABBLE_BUFFER_SIZE,"%s[%ld]: ERROR -> %s\n", client->client_name, time(NULL)-server_start, input);
-    
+
         if(write_to_client(cmd->key, strlen(buffer)+1, buffer)){
             fprintf(stderr,"Error -- could not send error msg: %s\n", buffer);
             return -1;
         }
     }
-    
+
     return 0;
 }
 
@@ -486,9 +503,9 @@ int write_to_client(unsigned long key, int size, void* buf)
         fprintf(stderr, "Error -- writing to non existing client %lu\n", key);
         return -1;
     }
-    
+
     int write_size = network_send(client->sock, size, buf);
-            
+
     if (write_size < 0){
         perror("writing to socket");
         return -1;

@@ -19,8 +19,11 @@ int server_connection_accept(int sock);
 /* new object */
 command_t* new_command(unsigned long key);
 
-void push_buffer(command_t cmd);
-command_t pop_buffer(void);
+command_t* clone_command(command_t *cmd);
+void display_command_terminal(command_t *cmd);
+
+void push_buffer(command_t *cmd);
+command_t *pop_buffer(void);
 
 void* thread_communication(void* arg);
 void* thread_executor(void* arg);

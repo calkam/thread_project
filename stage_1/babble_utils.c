@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+
+
 /* split the string according to BABBLE_DELIMITER */
 /* returns an array of char* with a copy of each item found */
 /* number of items is stored in nb_found */
@@ -16,7 +18,7 @@ static char** split_string(char* str, int* nb_found)
     int i=0;
 
     char **result=NULL;
-    
+
     for(i=0; i< strlen(str); i++){
         if(!strncmp(&str[i], BABBLE_DELIMITER, 1)){
             if(i-start > 0){
@@ -40,7 +42,7 @@ static char** split_string(char* str, int* nb_found)
         strncpy(new_item, &str[start], strlen(str)-start);
         result[count-1]=new_item;
     }
-    
+
     *nb_found = count;
 
     return result;
@@ -62,11 +64,11 @@ static void free_split_array(char** array, int size)
 unsigned long hash(char *str){
     unsigned long hash = 5381;
     int c;
-    
+
     while ((c = *str++) != 0){
         hash = ((hash << 5) + hash) + c;
     }
-        
+
     return hash;
 }
 
@@ -77,21 +79,21 @@ int str_to_command(char* str, int* ack_req)
 
     int cid_index=0;
 
-    
+
     if(nb_items == 0){
         fprintf(stderr,"Error -- invalid request -> %s\n", str);
         return -1;
     }
-    
+
     if(strlen(items[0]) == 1 && items[0][0] == 'S'){
         *ack_req=0;
         cid_index=1;
     }
     else{
         *ack_req=1;
-    }    
- 
-    
+    }
+
+
     if(strlen(items[cid_index]) == 1){
         errno=0;
         int res = (int)strtol(items[cid_index], NULL, 10);
@@ -101,8 +103,8 @@ int str_to_command(char* str, int* ack_req)
             free_split_array(items, nb_items);
             return -1;
         }
-        
-        
+
+
         if( res < LOGIN || res > RDV){
             //fprintf(stderr,"Error -- invalid request -> %s\n", str);
             free_split_array(items, nb_items);
@@ -120,7 +122,7 @@ int str_to_command(char* str, int* ack_req)
         free_split_array(items, nb_items);
         return res;
     }
-    
+
     if(!strcmp(items[cid_index], "LOGIN")){
         free_split_array(items, nb_items);
         if(*ack_req == 0){
@@ -164,7 +166,7 @@ int str_to_command(char* str, int* ack_req)
     }
 
     free_split_array(items, nb_items);
-    
+
     return -1;
 }
 
@@ -172,19 +174,19 @@ int str_to_payload(char* input, char* output, int size)
 {
     int nb_items=0;
     char **items=split_string(input, &nb_items);
-    
+
     int p_index=1;
 
     if(strlen(items[0]) == 1 && items[0][0] == 'S'){
         p_index=2;
     }
-    
+
     if(nb_items <= p_index){
         fprintf(stderr,"Error -- invalid payload -> %s\n", input);
         free_split_array(items, nb_items);
         return -1;
-    }    
-    
+    }
+
     int payload_size = strlen(items[p_index]);
 
     if(payload_size > size){
@@ -196,7 +198,7 @@ int str_to_payload(char* input, char* output, int size)
     strncpy(output, items[p_index], payload_size);
 
     free_split_array(items, nb_items);
-    
+
     return 0;
 }
 
@@ -222,7 +224,7 @@ unsigned long parse_login_ack(char* ack_msg)
     if(key_part==NULL){
         return 0;
     }
-    
+
     sscanf(key_part,"key %lu\n", &key);
 
     return key;
@@ -237,10 +239,8 @@ int parse_fcount_ack(char* ack)
     if(part==NULL){
         return -1;
     }
-    
+
     sscanf(part,"has %d followers\n", &nb_followers);
 
     return nb_followers;
 }
-
-
