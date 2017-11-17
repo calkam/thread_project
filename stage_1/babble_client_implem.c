@@ -25,7 +25,7 @@ int connect_to_server(char* host, int port)
 
     /* connecting to the server */
     /*printf("Babble client connects to %s:%d\n", host, port);*/
-    
+
     struct sockaddr_in serv_addr;
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -37,11 +37,11 @@ int connect_to_server(char* host, int port)
         return -1;
     }
 
-    bcopy((char *)server->h_addr, 
+    bcopy((char *)server->h_addr,
           (char *)&serv_addr.sin_addr.s_addr,
           server->h_length);
     serv_addr.sin_port = htons(port);
-    
+
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){
         perror("ERROR connecting");
         close(sockfd);
@@ -62,18 +62,18 @@ unsigned long client_login(int sock, char* id)
         fprintf(stderr,"Max id size is %d\n", BABBLE_ID_SIZE);
         return 0;
     }
-    
+
     snprintf(buffer, BABBLE_BUFFER_SIZE, "%d %s\n", LOGIN, id);
 
-    
+
     if (network_send(sock, strlen(buffer)+1, buffer) != strlen(buffer)+1){
         perror("ERROR writing to socket");
         close(sock);
         return 0;
     }
-    
+
     char* login_ack=NULL;
-    
+
     if(network_recv(sock, (void**) &login_ack) == -1){
         perror("ERROR reading from socket");
         close(sock);
@@ -82,9 +82,9 @@ unsigned long client_login(int sock, char* id)
 
     /* parsing the answer to get the key */
     unsigned long key=parse_login_ack(login_ack);
-    
+
     free(login_ack);
-    
+
     return key;
 }
 
@@ -114,7 +114,7 @@ int client_follow(int sock, char* id, int with_streaming)
 
     if(!with_streaming){
         char* ack=NULL;
-        
+
         if(network_recv(sock, (void**) &ack) == -1){
             perror("ERROR reading from socket");
             close(sock);
@@ -152,18 +152,18 @@ int client_follow_count(int sock)
     }
 
     char* count_ack=NULL;
-    
+
     if(network_recv(sock, (void**) &count_ack) == -1){
         perror("ERROR reading from socket");
         close(sock);
         return 0;
     }
-    
+
     /* parsing the answer to get the key */
     int count=parse_fcount_ack(count_ack);
-    
+
     free(count_ack);
-    
+
     return count;
 }
 
@@ -193,7 +193,7 @@ int client_publish(int sock, char* msg, int with_streaming)
 
     if(!with_streaming){
         char* ack=NULL;
-        
+
         if(network_recv(sock, (void**) &ack) == -1){
             perror("ERROR reading from socket");
             close(sock);
@@ -224,7 +224,7 @@ int client_timeline(int sock, int size_out)
 {
     char buffer[BABBLE_BUFFER_SIZE];
     bzero(buffer, BABBLE_BUFFER_SIZE);
-    
+
     snprintf(buffer, BABBLE_BUFFER_SIZE, "%d\n", TIMELINE);
 
     if (network_send(sock, strlen(buffer)+1, buffer) != strlen(buffer)+1){
@@ -255,14 +255,14 @@ int client_timeline(int sock, int size_out)
         free(recv_buf);
         i++;
     }
-    
+
     if(i < to_recv){
         if(size_out){
             return i;
         }
         return -1;
     }
- 
+
     return total_items;
 }
 
@@ -273,14 +273,14 @@ int client_rdv(int sock)
     bzero(buffer, BABBLE_BUFFER_SIZE);
 
     snprintf(buffer, BABBLE_BUFFER_SIZE, "%d\n", RDV);
- 
+
     if (network_send(sock, strlen(buffer)+1, buffer) != strlen(buffer)+1){
         fprintf(stderr,"Error -- sending RDV message\n");
         return -1;
     }
-    
+
     char* ack=NULL;
-        
+
     if(network_recv(sock, (void**) &ack) == -1){
         perror("ERROR reading from socket");
         close(sock);

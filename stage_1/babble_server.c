@@ -288,6 +288,7 @@ void* thread_communication(void* arg){
 
     /* looping on client commands */
     while((recv_size=network_recv(newsockfd, (void**) &recv_buff)) > 0){
+
         cmd = new_command(client_key);
         if(parse_command(recv_buff, cmd) == -1){
             fprintf(stderr, "Warning: unable to parse message from client %s\n", client_name);
@@ -375,7 +376,7 @@ int main(int argc, char *argv[])
         }
 
         if(pthread_create(&tids[nb_thread], NULL, thread_communication, &newsockfd) != 0){
-            fprintf(stderr,"Failed to create thread number %d\n",nb_thread);
+            fprintf(stderr,"Failed to create thread number %d\n", nb_thread);
         }else{
             nb_thread++;
         }
