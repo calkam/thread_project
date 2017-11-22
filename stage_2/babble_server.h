@@ -5,8 +5,6 @@
 
 #include "babble_types.h"
 
-#define BUFFER_SIZE 10000
-
 /* server starting date */
 extern time_t server_start;
 
