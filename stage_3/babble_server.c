@@ -20,14 +20,14 @@ pthread_mutex_t mutex     = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  non_full  = PTHREAD_COND_INITIALIZER;
 pthread_cond_t  non_empty = PTHREAD_COND_INITIALIZER;
 
-command_t* buffer[BUFFER_SIZE];
+command_t* buffer[MAX_MESSAGE];
 
 int nb_element = 0;
 int in=0;
 int out=0;
 
-pthread_t tids[MAX_CLIENT];
-pthread_t tid_executor;
+pthread_t tids_communcation[MAX_CLIENT];
+pthread_t tids_executor[MAX_MESSAGE];
 
 static void display_help(char *exec)
 {
@@ -196,12 +196,12 @@ void push_buffer(command_t *cmd){
 
     pthread_mutex_lock(&mutex);
 
-    while(nb_element == BUFFER_SIZE){
+    while(nb_element == MAX_MESSAGE){
         pthread_cond_wait(&non_full, &mutex);
     }
 
     buffer[in] = cmd_clone;
-    in = (in + 1) % BUFFER_SIZE;
+    in = (in + 1) % MAX_MESSAGE;
     nb_element++;
 
     pthread_cond_broadcast(&non_empty);
@@ -222,7 +222,7 @@ command_t* pop_buffer(void){
     }
 
     cmd = buffer[out];
-    out = (out + 1) % BUFFER_SIZE;
+    out = (out + 1) % MAX_MESSAGE;
     nb_element--;
 
     pthread_cond_broadcast(&non_full);
@@ -374,13 +374,15 @@ int main(int argc, char *argv[])
     newsockfd = calloc(MAX_CLIENT, sizeof(int));
 
     for(int i=0; i<MAX_CLIENT; i++){
-        if(pthread_create(&tids[i], NULL, thread_communication, &newsockfd[i]) != 0){
+        if(pthread_create(&tids_communcation[i], NULL, thread_communication, &newsockfd[i]) != 0){
             fprintf(stderr,"Failed to create thread number %d\n", i);
         }
     }
 
-    if(pthread_create(&tid_executor, NULL, thread_executor, NULL) != 0){
-        fprintf(stderr,"Failed to create thread executor\n");
+    for(int j=0; j<MAX_MESSAGE; j++){
+        if(pthread_create(&tids_executor[j], NULL, thread_executor, NULL) != 0){
+            fprintf(stderr,"Failed to create thread executor\n");
+        }
     }
 
     int no_thread = 0;
