@@ -331,8 +331,6 @@ void* thread_communication(void* arg){
 
         pthread_cond_signal(&cond_main);
 
-        printf("thread %d realease\n", tid);
-
         *newsockfd = 0;
     }
 
@@ -418,7 +416,7 @@ int main(int argc, char *argv[])
             pthread_cond_wait(&cond_main, &mutex_main);
         }
 
-        printf("test : %d\n", no_thread);
+        //printf("test : %d\n", no_thread);
 
         if((newsockfd[no_thread] = server_connection_accept(sockfd))==-1){
             printf("conection failed");
@@ -437,8 +435,6 @@ int main(int argc, char *argv[])
 
 int exist_thread_free(){
     int i=0;
-
-    printf("%d\n", i);
 
     while(i < MAX_CLIENT && used_thread[i].flag != 0){
         i++;
@@ -465,7 +461,7 @@ void change_thread_state(pthread_t tid){
         printf("thread doesn't exist\n");
     }
 
-    display_used_thread();
+    //display_used_thread();
 
     return;
 }
