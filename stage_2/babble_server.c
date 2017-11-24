@@ -16,6 +16,9 @@
 #include "babble_utils.h"
 #include "babble_communication.h"
 
+pthread_mutex_t mutex_main_loop= PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  cond_main_loop = PTHREAD_COND_INITIALIZER;
+
 pthread_mutex_t mutex_main= PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  cond_main = PTHREAD_COND_INITIALIZER;
 
@@ -329,7 +332,7 @@ void* thread_communication(void* arg){
 
         change_thread_state(tid);
 
-        pthread_cond_signal(&cond_main);
+        pthread_cond_signal(&cond_main_loop);
 
         *newsockfd = 0;
     }
@@ -413,7 +416,7 @@ int main(int argc, char *argv[])
     while(1){
 
         while((no_thread = exist_thread_free()) == -1){
-            pthread_cond_wait(&cond_main, &mutex_main);
+            pthread_cond_wait(&cond_main_loop, &mutex_main_loop);
         }
 
         //printf("test : %d\n", no_thread);
