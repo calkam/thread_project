@@ -16,11 +16,11 @@
 #include "babble_utils.h"
 #include "babble_communication.h"
 
-pthread_mutex_t mutex_main= PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t  cond_main = PTHREAD_COND_INITIALIZER;
-
 pthread_mutex_t mutex_main_loop= PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  cond_main_loop = PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t mutex_main= PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  cond_main = PTHREAD_COND_INITIALIZER;
 
 pthread_mutex_t mutex     = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  non_full  = PTHREAD_COND_INITIALIZER;
@@ -415,9 +415,11 @@ int main(int argc, char *argv[])
     /* main server loop */
     while(1){
 
-       while((no_thread = exist_thread_free()) == -1){
+        while((no_thread = exist_thread_free()) == -1){
             pthread_cond_wait(&cond_main_loop, &mutex_main_loop);
         }
+
+        //printf("test : %d\n", no_thread);
 
         if((newsockfd[no_thread] = server_connection_accept(sockfd))==-1){
             printf("conection failed");
