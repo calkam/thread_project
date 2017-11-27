@@ -190,7 +190,6 @@ static int answer_command(command_t *cmd)
 //------------------------- THREAD --------------------------------------------
 
 void push_buffer(command_t *cmd){
-    //TODO give priority to the first messages
 
     command_t *cmd_clone = clone_command(cmd);
 
@@ -215,19 +214,9 @@ command_t* pop_buffer(void){
 
     command_t *cmd;
 
-    pthread_mutex_lock(&mutex);
-
-    while(nb_element == 0){
-        pthread_cond_wait(&non_empty, &mutex);
-    }
-
     cmd = buffer[out];
     out = (out + 1) % MAX_MESSAGE;
     nb_element--;
-
-    pthread_cond_broadcast(&non_full);
-
-    pthread_mutex_unlock(&mutex);
 
     return cmd;
 }
@@ -321,6 +310,12 @@ void* thread_executor(void* arg){
     command_t *cmd;
 
     while(1){
+        pthread_mutex_lock(&mutex);
+
+		while(nb_element == 0){
+		    pthread_cond_wait(&non_empty, &mutex);
+		}
+    
         cmd = pop_buffer();
         if(process_command(cmd) == -1){
             //fprintf(stderr, "Warning: unable to process command from client %lu\n", client_key);
@@ -328,6 +323,10 @@ void* thread_executor(void* arg){
         if(answer_command(cmd) == -1){
             //fprintf(stderr, "Warning: unable to answer command from client %lu\n", client_key);
         }
+        
+        pthread_cond_broadcast(&non_full);
+
+	    pthread_mutex_unlock(&mutex);
     }
 
     return NULL;
