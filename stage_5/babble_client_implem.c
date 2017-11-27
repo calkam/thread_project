@@ -65,7 +65,10 @@ unsigned long client_login(int sock, char* id)
 
     snprintf(buffer, BABBLE_BUFFER_SIZE, "%d %s\n", LOGIN, id);
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
     if (network_send(sock, strlen(buffer)+1, buffer) != strlen(buffer)+1){
         perror("ERROR writing to socket");
         close(sock);

@@ -80,16 +80,22 @@ client_bundle_t* registration_lookup(unsigned long key)
 
 int registration_insert(client_bundle_t* cl)
 {
+<<<<<<< HEAD
     startWrite();
 
     if(nb_registered_clients == MAX_CLIENT){
         //WARNING : ENDWRITE doesn't call
+=======
+    startRead();
+    if(nb_registered_clients == MAX_CLIENT){
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
         return -1;
     }
 
     /* lookup to find if key already exists*/
     client_bundle_t* lp= registration_lookup(cl->key);
     if(lp != NULL){
+<<<<<<< HEAD
         fprintf(stderr, "Error -- id % ld already in use\n", cl->key);
         return -1;
     }
@@ -98,6 +104,16 @@ int registration_insert(client_bundle_t* cl)
     registration_table[nb_registered_clients]=cl;
     nb_registered_clients++;
 
+=======
+        endRead();
+        return 0;
+    }
+    endRead();
+
+    startWrite();
+    registration_table[nb_registered_clients]=cl;
+    nb_registered_clients++;
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
     endWrite();
 
     return 0;
@@ -107,7 +123,10 @@ int registration_insert(client_bundle_t* cl)
 client_bundle_t* registration_remove(unsigned long key)
 {
     startRead();
+<<<<<<< HEAD
 
+=======
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
     int i=0;
 
     for(i=0; i<nb_registered_clients; i++){
@@ -118,6 +137,7 @@ client_bundle_t* registration_remove(unsigned long key)
 
     if(i == nb_registered_clients){
         fprintf(stderr, "Error -- no client found\n");
+<<<<<<< HEAD
         return NULL;
     }
 
@@ -128,6 +148,19 @@ client_bundle_t* registration_remove(unsigned long key)
     registration_table[i] = registration_table[nb_registered_clients];
 
     endRead();
+=======
+        endRead();
+        return NULL;
+    }
+
+    client_bundle_t* cl= registration_table[i];
+    endRead();
+
+    startWrite();
+    nb_registered_clients--;
+    registration_table[i] = registration_table[nb_registered_clients];
+    endWrite();
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
 
     return cl;
 }

@@ -162,7 +162,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
     unsigned long key = client_login(sockfd, id_str);
 
     if(key == 0){

@@ -318,7 +318,11 @@ void* thread_communication(void* arg){
         free(cmd);
     }
 
+<<<<<<< HEAD
     if(client_name[0] != 0){
+=======
+    /*if(client_name[0] != 0){
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
         cmd = new_command(client_key);
         cmd->cid= UNREGISTER;
 
@@ -326,7 +330,11 @@ void* thread_communication(void* arg){
             fprintf(stderr,"Warning -- failed to unregister client %s\n",client_name);
         }
         free(cmd);
+<<<<<<< HEAD
     }
+=======
+    }*/
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
 
     return NULL;
 }

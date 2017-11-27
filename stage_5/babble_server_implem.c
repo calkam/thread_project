@@ -458,11 +458,17 @@ int unregisted_client(command_t *cmd)
         printf("### Unregister client %s (key = %lu)\n", client->client_name, client->key);
         close(client->sock);
 
+<<<<<<< HEAD
 
         free_client_data(client);
     }
 
 
+=======
+        free_client_data(client);
+    }
+
+>>>>>>> e1e6ccd5ee6680403ecd811d2597ec50551da6f1
     return 0;
 }
 
