@@ -67,25 +67,29 @@ void registration_init(void)
 
 client_bundle_t* registration_lookup(unsigned long key)
 {
+    startRead();
     int i=0;
 
     for(i=0; i< nb_registered_clients; i++){
         if(registration_table[i]->key == key){
+            endRead();
             return registration_table[i];
         }
     }
 
+    endRead();
     return NULL;
 }
 
 int registration_insert(client_bundle_t* cl)
 {
-    startWrite();
 
+    startRead();
     if(nb_registered_clients == MAX_CLIENT){
         //WARNING : ENDWRITE doesn't call
         return -1;
     }
+    endRead();
 
     /* lookup to find if key already exists*/
     client_bundle_t* lp= registration_lookup(cl->key);
@@ -94,6 +98,7 @@ int registration_insert(client_bundle_t* cl)
         return -1;
     }
 
+    startWrite();
     /* insert cl */
     registration_table[nb_registered_clients]=cl;
     nb_registered_clients++;
@@ -121,13 +126,16 @@ client_bundle_t* registration_remove(unsigned long key)
         return NULL;
     }
 
-
     client_bundle_t* cl= registration_table[i];
+
+    endRead();
+
+    startWrite();
 
     nb_registered_clients--;
     registration_table[i] = registration_table[nb_registered_clients];
 
-    endRead();
+    endWrite();
 
     return cl;
 }
