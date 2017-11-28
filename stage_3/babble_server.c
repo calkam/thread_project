@@ -233,6 +233,13 @@ command_t* pop_buffer(void){
     out = (out + 1) % MAX_MESSAGE;
     nb_element--;
 
+    if(process_command(cmd) == -1){
+        //fprintf(stderr, "Warning: unable to process command from client %lu\n", client_key);
+    }
+    if(answer_command(cmd) == -1){
+        //fprintf(stderr, "Warning: unable to answer command from client %lu\n", client_key);
+    }
+
     pthread_cond_broadcast(&non_full);
 
     pthread_mutex_unlock(&mutex);
@@ -346,12 +353,6 @@ void* thread_executor(void* arg){
 
     while(1){
         cmd = pop_buffer();
-        if(process_command(cmd) == -1){
-            //fprintf(stderr, "Warning: unable to process command from client %lu\n", client_key);
-        }
-        if(answer_command(cmd) == -1){
-            //fprintf(stderr, "Warning: unable to answer command from client %lu\n", client_key);
-        }
     }
 
     return NULL;
