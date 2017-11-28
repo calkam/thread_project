@@ -20,14 +20,16 @@ pthread_mutex_t mutex     = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  non_full  = PTHREAD_COND_INITIALIZER;
 pthread_cond_t  non_empty = PTHREAD_COND_INITIALIZER;
 
+pthread_mutex_t mutex_thread = PTHREAD_MUTEX_INITIALIZER;
+
 command_t* buffer[MAX_MESSAGE];
 
 int nb_element = 0;
 int in=0;
 int out=0;
 
-pthread_t tids_communcation[MAX_CLIENT];
-pthread_t tids_executor[MAX_MESSAGE];
+pthread_t tids_communcation[BABBLE_COMMUNICATION_THREADS];
+pthread_t tids_executor[BABBLE_EXECUTOR_THREADS];
 
 static void display_help(char *exec)
 {
@@ -371,15 +373,15 @@ int main(int argc, char *argv[])
 
     printf("Babble server bound to port %d\n", portno);
 
-    newsockfd = calloc(MAX_CLIENT, sizeof(int));
+    newsockfd = calloc(BABBLE_COMMUNICATION_THREADS, sizeof(int));
 
-    for(int i=0; i<MAX_CLIENT; i++){
+    for(int i=0; i<BABBLE_COMMUNICATION_THREADS; i++){
         if(pthread_create(&tids_communcation[i], NULL, thread_communication, &newsockfd[i]) != 0){
             fprintf(stderr,"Failed to create thread number %d\n", i);
         }
     }
 
-    for(int j=0; j<MAX_MESSAGE; j++){
+    for(int j=0; j<BABBLE_EXECUTOR_THREADS; j++){
         if(pthread_create(&tids_executor[j], NULL, thread_executor, NULL) != 0){
             fprintf(stderr,"Failed to create thread executor\n");
         }
@@ -390,7 +392,7 @@ int main(int argc, char *argv[])
     /* main server loop */
     while(1){
 
-        if(no_thread < MAX_CLIENT){
+        if(no_thread < BABBLE_COMMUNICATION_THREADS){
             if((newsockfd[no_thread] = server_connection_accept(sockfd))==-1){
                 return -1;
             }
