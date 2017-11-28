@@ -5,6 +5,11 @@
 
 #include "babble_types.h"
 
+typedef struct{
+    pthread_t tid;
+    int flag;
+} thread_state;
+
 /* server starting date */
 extern time_t server_start;
 
@@ -43,5 +48,13 @@ int notify_parse_error(command_t *cmd, char *input);
 
 /* High level comm function */
 int write_to_client(unsigned long key, int size, void* buf);
+
+//my functions
+void change_thread_state(pthread_t tid);
+
+void display_used_thread();
+
+int exist_thread_free();
+
 
 #endif
